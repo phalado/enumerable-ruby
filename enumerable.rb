@@ -1,70 +1,98 @@
+# frozen_string_literal: true
+
 module Enumerable
-  def my_each(&block)
+  def my_each
     if block_given?
       for item in self do
-        yield item        
-      end      
+        yield item
+      end
     else
-      self.to_enum      
-    end    
+      to_enum
+    end
   end
 
-  def my_each_with_index(&block)
-    unless block_given?
-      self.to_enum      
-    else
+  def my_each_with_index
+    if block_given?
       i = 0
       for item in self do
         yield item, i
-        i+=1        
+        i += 1
       end
+    else
+      to_enum
     end
   end
 
-  def my_select(&block)
-    unless block_given?
-      self.to_enum
-    else
+  def my_select
+    if block_given?
       ar = []
-      self.my_each do |x|
-        if (yield x)
-           ar << x         
-        end
+      my_each do |x|
+        ar << x if yield x
       end
-    end
-    return ar
-  end
-
-  def my_all?(pattern = false, &block)
-    unless block_given?
-      unless pattern
-        return self.my_all? {|obj| obj}        
-      end
-      return self.my_all? {|x| x.is_a? pattern }
     else
-      self.my_each do |x|
-        if !yield x
-          return false
-        end
-      end
-      return true
-    end    
+      to_enum
+    end
+    ar
   end
 
-  def my_any?(&block)
-    unless block_given?
-      return self.my_any? {|obj| obj}      
+  def my_all?(pattern = false)
+    if block_given?
+      my_each do |x|
+        return false unless yield x
+      end
+      true
+    else
+      return my_all? { |obj| obj } unless pattern
+
+      my_all? { |x| x.is_a? pattern }
     end
-    self.my_each do |x|
-      return true if yield x;
-    end
-    return false
   end
-  
-  def my_none?(&block)
-    unless block_given?
-      return !self.my_any?
+
+  def my_any?
+    return my_any? { |obj| obj } unless block_given?
+
+    my_each do |x|
+      return true if yield x
     end
-    return !self.my_any? {|x| yield x}    
+    false
+  end
+
+  def my_none?
+    return !my_any? unless block_given?
+
+    !my_any? { |x| yield x }
+  end
+
+  def my_map(&prc)
+    return to_enum unless block_given?
+
+    ar = []
+    my_each { |x| ar << (prc ? (yield x) : prc.call(x)) }
+    ar
+  end
+
+  def my_inject(initial = nil, sym = nil)
+    if block_given?
+      my_each do |item|
+        initial = yield initial, item
+      end
+    else
+      unless sym
+        raise 'No symbol nor block given' unless initial.class == Symbol
+
+        sym = initial
+        initial = self[0]
+      end
+      my_each do |item|
+        next if initial == item
+
+        initial = initial.send sym, item
+      end
+    end
+    initial
+  end
+
+  def multiply_els
+    my_inject(1, :*)
   end
 end
