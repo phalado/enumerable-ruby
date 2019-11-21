@@ -44,34 +44,36 @@ module Enumerable
   end
 
   def my_all?(pattern = nil)
-    unless block_given?
+    if block_given?
+      my_each { |x| return false unless yield x }
+    else
       return my_all? { |obj| obj } unless pattern
 
       if pattern.class == Regexp
-        my_all? { |x| pattern.match(x) }
+        my_each { |x| return false unless pattern.match?(x) }
       elsif pattern.class == Class
-        my_all? { |x| x.is_a? pattern }
+        my_each { |x| return false unless x.is_a? pattern }
       else
-        my_all? { |x| x === pattern }
+        my_each { |x| return false unless x === pattern }
       end
     end
-    my_each { |x| return false unless yield x }
     true
   end
 
   def my_any?(pattern = nil)
-    unless block_given?
+    if block_given?
+      my_each { |x| return true if yield x }
+    else
       return my_any? { |obj| obj } unless pattern
 
       if pattern.class == Regexp
-        my_any? { |x| pattern.match(x) }
+        my_each { |x| return true if pattern.match?(x) }
       elsif pattern.class == Class
-        my_any? { |x| x.is_a? pattern }
+        my_each { |x| return true if x.is_a? pattern }
       else
-        my_any? { |x| x === pattern }
+        my_each { |x| return true if x === pattern }
       end
     end
-    my_each { |x| return true if yield x }
     false
   end
 
@@ -94,22 +96,23 @@ module Enumerable
     ar
   end
 
-  def my_inject(initial = nil, sym = nil)
-    if block_given?
-      my_each { |item| initial = yield initial, item }
-    else
-      unless sym
-        raise 'No symbol nor block given' unless initial.class == Symbol
+  def my_inject(initial = nil, sym = nil, &block)
+    unless block_given?
+      return my_inject_sym(initial) if initial.class == Symbol
+      return my_inject_sym(sym, initial) if sym
 
-        sym = initial
-        initial = self[0]
-      end
-      my_each do |item|
-        next if initial == item
-
-        initial = initial.send sym, item
-      end
+      raise 'No block nor symbol given'
     end
+    return self[1..length].my_inject(self[0], &block) unless initial
+
+    my_each { |x| initial = block.call(initial, x) }
+    initial
+  end
+
+  def my_inject_sym(sym, initial = nil)
+    return self[1..length].my_inject_sym(sym, self[0]) unless initial
+
+    my_each { |x| initial = initial.send sym, x }
     initial
   end
 
