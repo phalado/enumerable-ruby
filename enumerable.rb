@@ -103,14 +103,14 @@ module Enumerable
 
       raise 'No block nor symbol given'
     end
-    return self[1..length].my_inject(self[0], &block) unless initial
+    return to_a[1..to_a.length].my_inject(to_a[0], &block) unless initial
 
     my_each { |x| initial = block.call(initial, x) }
     initial
   end
 
   def my_inject_sym(sym, initial = nil)
-    return self[1..length].my_inject_sym(sym, self[0]) unless initial
+    return to_a[1..to_a.length].my_inject_sym(sym, to_a[0]) unless initial
 
     my_each { |x| initial = initial.send sym, x }
     initial

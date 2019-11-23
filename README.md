@@ -23,6 +23,12 @@ The methods implemented are
 #my_map
 #my_inject
 ```
+
+## Testing 
+
+Several RSpec tests were implemented, checking regular and fringe cases, to assure functionality.
+
 ### Author:
 
 Daniel Chincoya | [@chincoya7](https://twitter.com/chincoya7)
+Raphael Cordeiro | [GitHub](https://github.com/phalado)
